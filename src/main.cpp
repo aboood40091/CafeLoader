@@ -3,11 +3,14 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <coreinit/exception.h>
 #include <coreinit/memorymap.h>
-#include <nsysnet/socket.h>
 #include <coreinit/title.h>
+#include <nsysnet/socket.h>
 #include <utils/logger.h>
 #include <wups.h>
+
+#include "handler.hpp"
 
 #define FS_MAX_LOCALPATH_SIZE           511
 #define FS_MAX_MOUNTPATH_SIZE           128
@@ -73,7 +76,10 @@ ON_APPLICATION_START(args){
     socket_lib_init();
     log_init();
 
-    DEBUG_FUNCTION_LINE("ON_APPLICATION_START reached!\n");
+    DEBUG_FUNCTION_LINE("Setting the ExceptionCallbacks\n");
+    OSSetExceptionCallbackEx(OS_EXCEPTION_MODE_GLOBAL_ALL_CORES, OS_EXCEPTION_TYPE_DSI, DSIHandler_Fatal);
+    OSSetExceptionCallbackEx(OS_EXCEPTION_MODE_GLOBAL_ALL_CORES, OS_EXCEPTION_TYPE_ISI, ISIHandler_Fatal);
+    OSSetExceptionCallbackEx(OS_EXCEPTION_MODE_GLOBAL_ALL_CORES, OS_EXCEPTION_TYPE_PROGRAM, ProgramHandler_Fatal);
 
     if (args.sd_mounted && args.kernel_access) {
         char TitleIDString[FS_MAX_FULLPATH_SIZE];
