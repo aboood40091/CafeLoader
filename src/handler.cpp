@@ -10,11 +10,11 @@
 // From DiiBuggerWUPS:
 // https://github.com/Maschell/DiiBuggerWUPS
 
-OSContext *crashContext;
+OSContext crashContext;
 uint32_t crashType;
 
 bool handle_crash(uint32_t type, void *handler, OSContext *context) {
-    memcpy((char *)crashContext, (const char *)context, sizeof(OSContext));
+    memcpy((char *)&crashContext, (const char *)context, sizeof(OSContext));
     crashType = type;
     context->srr0 = (uint32_t)handler;
     return true;
@@ -34,46 +34,46 @@ void FatalCrashHandler() {
              "CR: %08X LR: %08X CTR:%08X XER:%08X\n"
              "SRR0:%08X SRR1:%08X EX0:%08X EX1:%08X\n",
              crashType,
-             crashContext->gpr[0],
-             crashContext->gpr[1],
-             crashContext->gpr[2],
-             crashContext->gpr[3],
-             crashContext->gpr[4],
-             crashContext->gpr[5],
-             crashContext->gpr[6],
-             crashContext->gpr[7],
-             crashContext->gpr[8],
-             crashContext->gpr[9],
-             crashContext->gpr[10],
-             crashContext->gpr[11],
-             crashContext->gpr[12],
-             crashContext->gpr[13],
-             crashContext->gpr[14],
-             crashContext->gpr[15],
-             crashContext->gpr[16],
-             crashContext->gpr[17],
-             crashContext->gpr[18],
-             crashContext->gpr[19],
-             crashContext->gpr[20],
-             crashContext->gpr[21],
-             crashContext->gpr[22],
-             crashContext->gpr[23],
-             crashContext->gpr[24],
-             crashContext->gpr[25],
-             crashContext->gpr[26],
-             crashContext->gpr[27],
-             crashContext->gpr[28],
-             crashContext->gpr[29],
-             crashContext->gpr[30],
-             crashContext->gpr[31],
-             crashContext->cr,
-             crashContext->lr,
-             crashContext->ctr,
-             crashContext->xer,
-             crashContext->srr0,
-             crashContext->srr1,
-             crashContext->dsisr,
-             crashContext->dar
+             crashContext.gpr[0],
+             crashContext.gpr[1],
+             crashContext.gpr[2],
+             crashContext.gpr[3],
+             crashContext.gpr[4],
+             crashContext.gpr[5],
+             crashContext.gpr[6],
+             crashContext.gpr[7],
+             crashContext.gpr[8],
+             crashContext.gpr[9],
+             crashContext.gpr[10],
+             crashContext.gpr[11],
+             crashContext.gpr[12],
+             crashContext.gpr[13],
+             crashContext.gpr[14],
+             crashContext.gpr[15],
+             crashContext.gpr[16],
+             crashContext.gpr[17],
+             crashContext.gpr[18],
+             crashContext.gpr[19],
+             crashContext.gpr[20],
+             crashContext.gpr[21],
+             crashContext.gpr[22],
+             crashContext.gpr[23],
+             crashContext.gpr[24],
+             crashContext.gpr[25],
+             crashContext.gpr[26],
+             crashContext.gpr[27],
+             crashContext.gpr[28],
+             crashContext.gpr[29],
+             crashContext.gpr[30],
+             crashContext.gpr[31],
+             crashContext.cr,
+             crashContext.lr,
+             crashContext.ctr,
+             crashContext.xer,
+             crashContext.srr0,
+             crashContext.srr1,
+             crashContext.dsisr,
+             crashContext.dar
             );
 
     DEBUG_FUNCTION_LINE("%s", buffer);
