@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <coreinit/cache.h>
 #include <coreinit/exception.h>
 #include <coreinit/memorymap.h>
 #include <coreinit/title.h>
@@ -57,18 +58,22 @@ char* readBuf(const char *fname, int file) {
     return buffer;
 }
 
+void KernelCopyData(void *dest, void *source, uint32_t len) {
+    ICInvalidateRange(source, len);
+    DCFlushRange(source, len);
+
+    WUPS_KernelCopyDataFunction(OSEffectiveToPhysical((uint32_t)dest), OSEffectiveToPhysical((uint32_t)source), len);
+
+    ICInvalidateRange(dest, len);
+    DCFlushRange(dest, len);
+}
+
 void Patch(char *buffer) {
     uint16_t count = *(uint16_t *)buffer; buffer += 2;
     for (uint16_t i = 0; i < count; i++) {
         uint16_t bytes = *(uint16_t *)buffer; buffer += 2;
         uint32_t addr = *(uint32_t *)buffer; buffer += 4;
-
-        if (addr < 0x10000000)
-            WUPS_KernelCopyDataFunction(OSEffectiveToPhysical(addr), OSEffectiveToPhysical((uint32_t)buffer), bytes);
-        else
-            memcpy((void *)addr, buffer, bytes);
-
-        buffer += bytes;
+        KernelCopyData((void *)addr, buffer, bytes); buffer += bytes;
     }
 }
 
@@ -112,7 +117,7 @@ ON_APPLICATION_START(args){
             int   codeFile   = open(codePath.c_str(), O_RDONLY);
             char *codeBuffer = readBuf(codePath.c_str(), codeFile);
             length = getFileLength(codePath.c_str());
-            WUPS_KernelCopyDataFunction(OSEffectiveToPhysical(CODE_ADDR), OSEffectiveToPhysical((uint32_t)codeBuffer), length);
+            KernelCopyData((void *)CODE_ADDR, codeBuffer, length);
 
             close(codeFile);
             free(codeBuffer);
@@ -122,7 +127,7 @@ ON_APPLICATION_START(args){
             int   dataFile   = open(dataPath.c_str(), O_RDONLY);
             char *dataBuffer = readBuf(dataPath.c_str(), dataFile);
             length = getFileLength(dataPath.c_str());
-            memcpy((void *)DATA_ADDR, dataBuffer, length);
+            KernelCopyData((void *)DATA_ADDR, dataBuffer, length);
 
             close(dataFile);
             free(dataBuffer);
@@ -132,7 +137,7 @@ ON_APPLICATION_START(args){
             int   ctorsFile   = open(ctorsPath.c_str(), O_RDONLY);
             char *ctorsBuffer = readBuf(ctorsPath.c_str(), ctorsFile);
             length = getFileLength(ctorsPath.c_str());
-            memcpy((void *)(DATA_ADDR + 0x20000), ctorsBuffer, length);
+            KernelCopyData((void *)(DATA_ADDR + 0x20000), ctorsBuffer, length);
 
             close(ctorsFile);
             free(ctorsBuffer);
