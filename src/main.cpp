@@ -2,10 +2,10 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 
-#include <coreinit/title.h>
+#include <coreinit/memorymap.h>
 #include <nsysnet/socket.h>
+#include <coreinit/title.h>
 #include <utils/logger.h>
 #include <wups.h>
 
@@ -20,35 +20,36 @@ WUPS_PLUGIN_AUTHOR("AboodXD");
 WUPS_PLUGIN_LICENSE("GPL");
 
 WUPS_FS_ACCESS()
+WUPS_ALLOW_KERNEL()
 
-void *CODE_ADDR = (void *)0x0F800000; // change this
-void *DATA_ADDR = (void *)0x10400000; // change this
+uint32_t CODE_ADDR = 0x0F800000; // change this
+uint32_t DATA_ADDR = 0x10400000; // change this
 
 int exists(const char *fname) {
-    FILE *file;
-    if ((file = fopen(fname, "rb"))) {
-        fclose(file);
-        return 1;
-    }
+    int file = open(fname, O_RDONLY);
 
-    return 0;
+    if (file < 0)
+        return 0;
+
+    close(file);
+    return 1;
 }
 
-uint32_t getFileLength(FILE *file) {
-    fseek(file, 0, SEEK_END);
-    uint32_t length = ftell(file);
-    fseek(file, 0, SEEK_SET);
+uint32_t getFileLength(const char *fname) {
+    struct stat fileStat;
+    stat(fname, &fileStat);
+    uint32_t length = fileStat.st_size;
 
     return length;
 }
 
-char* open(FILE *file) {
+char* readBuf(const char *fname, int file) {
     char* buffer = 0;
-    uint32_t length = getFileLength(file);
+    uint32_t length = getFileLength(fname);
 
-    buffer = (char *)malloc(length * sizeof(char));
+    buffer = (char *)malloc(length);
     if (buffer)
-        fread(buffer, sizeof(char), length, file);
+        read(file, buffer, length);
 
     return buffer;
 }
@@ -58,11 +59,13 @@ void Patch(char *buffer) {
     for (uint16_t i = 0; i < count; i++) {
         uint16_t bytes = *(uint16_t *)buffer; buffer += 2;
         uint32_t addr = *(uint32_t *)buffer; buffer += 4;
-        for (uint16_t j = 0; j < bytes; j++) {
-            *((uint8_t *)addr) = *(uint8_t *)buffer;
-            buffer += 1;
-            addr += 1;
-        }
+
+        if (addr < 0x10000000)
+            WUPS_KernelCopyDataFunction(OSEffectiveToPhysical(addr), OSEffectiveToPhysical((uint32_t)buffer), bytes);
+        else
+            memcpy((void *)addr, buffer, bytes);
+
+        buffer += bytes;
     }
 }
 
@@ -72,7 +75,7 @@ ON_APPLICATION_START(args){
 
     DEBUG_FUNCTION_LINE("ON_APPLICATION_START reached!\n");
 
-    if (args.sd_mounted) {
+    if (args.sd_mounted && args.kernel_access) {
         char TitleIDString[FS_MAX_FULLPATH_SIZE];
         snprintf(TitleIDString,FS_MAX_FULLPATH_SIZE,"%016llX",OSGetTitleID());
 
@@ -91,42 +94,44 @@ ON_APPLICATION_START(args){
         if (exists(patchesPath.c_str()) && exists(codePath.c_str()) && exists(dataPath.c_str()) && exists(ctorsPath.c_str())) {
             DEBUG_FUNCTION_LINE("Patches found!\n");
 
-            FILE *patchesFile = fopen(patchesPath.c_str(), "rb");
-            char *patchesBuffer = open(patchesFile);
+            int   patchesFile   = open(patchesPath.c_str(), O_RDONLY);
+            char *patchesBuffer = readBuf(patchesPath.c_str(), patchesFile);
             Patch(patchesBuffer);
+
+            close(patchesFile);
+            free(patchesBuffer);
 
             DEBUG_FUNCTION_LINE("Loaded Patches.hax!\n");
 
-            FILE *codeFile = fopen(codePath.c_str(), "rb");
-            char *codeBuffer = open(codeFile);
-            length = getFileLength(codeFile);
-            memcpy((void *)(0xA0000000 + (int)CODE_ADDR), codeBuffer, length);
+            int   codeFile   = open(codePath.c_str(), O_RDONLY);
+            char *codeBuffer = readBuf(codePath.c_str(), codeFile);
+            length = getFileLength(codePath.c_str());
+            WUPS_KernelCopyDataFunction(OSEffectiveToPhysical(CODE_ADDR), OSEffectiveToPhysical((uint32_t)codeBuffer), length);
+
+            close(codeFile);
+            free(codeBuffer);
 
             DEBUG_FUNCTION_LINE("Loaded Code.bin!\n");
 
-            FILE *dataFile = fopen(dataPath.c_str(), "rb");
-            char *dataBuffer = open(dataFile);
-            length = getFileLength(dataFile);
-            memcpy(DATA_ADDR, dataBuffer, length);
+            int   dataFile   = open(dataPath.c_str(), O_RDONLY);
+            char *dataBuffer = readBuf(dataPath.c_str(), dataFile);
+            length = getFileLength(dataPath.c_str());
+            memcpy((void *)DATA_ADDR, dataBuffer, length);
+
+            close(dataFile);
+            free(dataBuffer);
 
             DEBUG_FUNCTION_LINE("Loaded Data.bin!\n");
 
-            FILE *ctorsFile = fopen(ctorsPath.c_str(), "rb");
-            char *ctorsBuffer = open(ctorsFile);
-            length = getFileLength(ctorsFile);
-            memcpy((void *)((int)DATA_ADDR + 0x20000), ctorsBuffer, length);
+            int   ctorsFile   = open(ctorsPath.c_str(), O_RDONLY);
+            char *ctorsBuffer = readBuf(ctorsPath.c_str(), ctorsFile);
+            length = getFileLength(ctorsPath.c_str());
+            memcpy((void *)(DATA_ADDR + 0x20000), ctorsBuffer, length);
+
+            close(ctorsFile);
+            free(ctorsBuffer);
 
             DEBUG_FUNCTION_LINE("Loaded Ctors.bin!\n");
-
-            fclose(patchesFile);
-            fclose(codeFile);
-            fclose(dataFile);
-            fclose(ctorsFile);
-
-            free(patchesBuffer);
-            free(codeBuffer);
-            free(dataBuffer);
-            free(ctorsBuffer);
         }
     }
 }
