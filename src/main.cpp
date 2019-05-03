@@ -26,9 +26,6 @@ WUPS_PLUGIN_LICENSE("GPL");
 WUPS_FS_ACCESS()
 WUPS_ALLOW_KERNEL()
 
-uint32_t CODE_ADDR = 0x0F800000; // change this
-uint32_t DATA_ADDR = 0x10400000; // change this
-
 int exists(const char *fname) {
     int file = open(fname, O_RDONLY);
 
@@ -95,15 +92,29 @@ ON_APPLICATION_START(args){
 
         DEBUG_FUNCTION_LINE("patchTitleIDPath: %s\n", patchTitleIDPath.c_str());
 
+        std::string addrPath    = patchTitleIDPath + "/Addr.bin";
         std::string patchesPath = patchTitleIDPath + "/Patches.hax";
         std::string codePath    = patchTitleIDPath + "/Code.bin";
         std::string dataPath    = patchTitleIDPath + "/Data.bin";
         std::string ctorsPath   = patchTitleIDPath + "/Ctors.bin";
 
+        uint32_t CODE_ADDR;
+        uint32_t DATA_ADDR;
+
         uint32_t length = 0;
 
-        if (exists(patchesPath.c_str()) && exists(codePath.c_str()) && exists(dataPath.c_str()) && exists(ctorsPath.c_str())) {
+        if (exists(addrPath.c_str()) && exists(patchesPath.c_str()) && exists(codePath.c_str()) && exists(dataPath.c_str()) && exists(ctorsPath.c_str())) {
             DEBUG_FUNCTION_LINE("Patches found!\n");
+
+            int   addrFile   = open(addrPath.c_str(), O_RDONLY);
+            char *addrBuffer = readBuf(addrPath.c_str(), addrFile);
+            CODE_ADDR = *(uint32_t *)(addrBuffer + 0);
+            DATA_ADDR = *(uint32_t *)(addrBuffer + 4);
+
+            close(addrFile);
+            free(addrBuffer);
+
+            DEBUG_FUNCTION_LINE("Loaded Addr.bin!\n");
 
             int   patchesFile   = open(patchesPath.c_str(), O_RDONLY);
             char *patchesBuffer = readBuf(patchesPath.c_str(), patchesFile);
