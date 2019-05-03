@@ -137,12 +137,17 @@ ON_APPLICATION_START(args){
             int   ctorsFile   = open(ctorsPath.c_str(), O_RDONLY);
             char *ctorsBuffer = readBuf(ctorsPath.c_str(), ctorsFile);
             length = getFileLength(ctorsPath.c_str());
-            KernelCopyData((void *)(DATA_ADDR + 0x20000), ctorsBuffer, length);
+            KernelCopyData((void *)(DATA_ADDR + 0x20004), ctorsBuffer, length);
 
             close(ctorsFile);
             free(ctorsBuffer);
 
             DEBUG_FUNCTION_LINE("Loaded Ctors.bin!\n");
+
+            uint32_t debugPtr = (uint32_t)&log_printf_;
+            KernelCopyData((void *)(DATA_ADDR + 0x20000), &debugPtr, 4);
+
+            DEBUG_FUNCTION_LINE("log_printf_ addres: 0x%08X\n", debugPtr);
         }
     }
 }
