@@ -5,7 +5,7 @@
 #include <coreinit/exception.h>
 #include <utils/logger.h>
 
-#include "handler.hpp"
+#include "handler.h"
 
 // From DiiBuggerWUPS:
 // https://github.com/Maschell/DiiBuggerWUPS

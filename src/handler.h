@@ -1,4 +1,7 @@
+#pragma once
+
 #include <coreinit/context.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
