@@ -1,4 +1,6 @@
 #include <string>
+#include <algorithm>
+#include <vector>
 
 #include <string.h>
 #include <stdio.h>
@@ -9,11 +11,12 @@
 
 #include <coreinit/debug.h>
 #include <coreinit/title.h>
+#include <utils/logger.h>
 
 #include "globals.h"
 #include "filesystem.h"
 
-FSFileHandle file;
+std::vector<FSFileHandle> fileHandles;
 
 bool getStat(FSClient *client, FSCmdBlock *block,
              const char *path, FSStat *returnedStat,
@@ -40,16 +43,11 @@ bool getStat(FSClient *client, FSCmdBlock *block,
 	return !exists(fpath.c_str());
 }
 
-void checkFileHandle() {
-	if (file != 0)
-		OSFatal("Blarg");
-}
-
 bool getStatFile(FSClient *client, FSCmdBlock *block,
 				 FSFileHandle fileHandle, FSStat *returnedStat,
 				 int errHandling) {
 
-	if (file == fileHandle) {
+	if (std::find(fileHandles.begin(), fileHandles.end(), fileHandle) != fileHandles.end()) {
 		struct stat path_stat;
         if (fstat(fileHandle, &path_stat) < 0)
             return 1;
@@ -65,7 +63,7 @@ bool setPosFile(FSClient *client, FSCmdBlock *block,
 				FSFileHandle fileHandle, uint32_t fpos,
 				int errHandling) {
 
-	if (fileHandle != file)
+	if (std::find(fileHandles.begin(), fileHandles.end(), fileHandle) == fileHandles.end())
 		return 1;
 
 	int newOffset = lseek(fileHandle, (int)fpos, SEEK_SET);
@@ -104,10 +102,8 @@ bool openSave(FSClient *client, FSCmdBlock *block,
 	if (!exists(fpath.c_str()))
 		return 1;
 
-    checkFileHandle();
-
 	FSFileHandle handle = open(fpath.c_str(), O_RDONLY);
-	file = handle;
+	fileHandles.push_back(handle);
 	*fileHandle = handle;
 
 	return 1;
@@ -139,10 +135,8 @@ bool openFile(FSClient *client, FSCmdBlock *block,
 	if (!exists(fpath.c_str()))
 		return 1;
 
-    checkFileHandle();
-
 	FSFileHandle handle = open(fpath.c_str(), O_RDONLY);
-	file = handle;
+	fileHandles.push_back(handle);
 	*fileHandle = handle;
 
 	return 0;
@@ -185,7 +179,7 @@ int readFile(FSClient *client, FSCmdBlock *block,
              FSFileHandle fileHandle, int flag,
              int errHandling) {
 
-	if (fileHandle != file)
+	if (std::find(fileHandles.begin(), fileHandles.end(), fileHandle) == fileHandles.end())
 		return -1;
 
 	return readIntoBuffer(fileHandle, dest, size, count);
@@ -196,7 +190,7 @@ bool writeFile(FSClient *client, FSCmdBlock *block,
 			   FSFileHandle fileHandle, int flag,
 			   int errHandling) {
 
-	if (fileHandle != file)
+	if (std::find(fileHandles.begin(), fileHandles.end(), fileHandle) == fileHandles.end())
 		return 1;
 
 	uint32_t length = size * count;
@@ -209,10 +203,10 @@ bool closeFile(FSClient *client, FSCmdBlock *block,
 			   FSFileHandle fileHandle,
 			   int errHandling) {
 
-	if (fileHandle != file)
+	if (std::find(fileHandles.begin(), fileHandles.end(), fileHandle) == fileHandles.end())
 		return 1;
 
     close(fileHandle);
-	file = 0;
+	fileHandles.erase(std::remove(fileHandles.begin(), fileHandles.end(), fileHandle), fileHandles.end());
 	return 0;
 }

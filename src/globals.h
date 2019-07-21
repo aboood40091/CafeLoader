@@ -19,7 +19,6 @@ extern bool setPosFileCalledByCafeLoader;
 extern bool getStatFileCalledByCafeLoader;
 extern bool getStatCalledByCafeLoader;
 extern bool overrideLoading;
-extern FSFileHandle file;
 
 int exists(const char *fname);
 uint32_t getFileLength(const char *fname);
