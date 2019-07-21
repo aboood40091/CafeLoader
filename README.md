@@ -1,4 +1,4 @@
-# CafeLoader
+# CafeLoader (SD branch)
 Custom code loader for the Nintendo Wii U.
 
 ## Wii U Plugin System
@@ -30,25 +30,13 @@ Example:
 sd:/cafeloader/0005000010101D00
 ```
 
-## Client
-CafeLoader provides a client which can be used to replace game files (Just like Cafiine).  
+## Replacing game files
+This branch of CafeLoader allows you to load game files from the SD card (Just like SDCafiine).  
 
-In order for the Wii U to know which PC on the network it's looking to connect to, you have to type in your PC's IP in a file named ``ip.bin`` and place it in:
-
-```
-sd:/cafeloader
-```  
-
-``client.py`` is able to generate an ``ip.bin`` for you if you run it with ``--bin`` as an argument, like this:
+This is where your game's ``content`` folder would be:
 
 ```
-py -3 client.py --bin
-```  
-
-Your game's ``content`` folder would placed in the following directory (relative to ``client.py``):
-
-```
-vol/TITLE_ID/content
+sd:/cafeloader/vol/TITLE_ID/content
 ```  
 
 Again, where ``TITLE_ID`` is the title ID of the game you want to patch. (Without ``-``. All letters must be uppercase)  
@@ -56,18 +44,9 @@ Again, where ``TITLE_ID`` is the title ID of the game you want to patch. (Withou
 Example:
 
 ```
-vol/0005000010101D00/content
+sd:/cafeloader/vol/0005000010101D00/content
 ```
-
-### Replacing SD Card contents
-``client.py`` can also replace files on your SD Card. The root of the SD Card would as follows (relative to ``client.py``):
-
-```
-vol/external01
-```  
-
-**Don't use this to load the patches!** It will result in a crash. I'm currently working on fixing this.
 
 
 ## Special Thanks:
-* [Kinnay](https://github.com/Kinnay): original concept + ``client.py``.
+* [Kinnay](https://github.com/Kinnay): original concept.

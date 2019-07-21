@@ -1,38 +1,48 @@
+#include <string>
+
 #include <string.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <coreinit/debug.h>
-#include <coreinit/filesystem.h>
-#include <nsysnet/socket.h>
+#include <coreinit/title.h>
 
 #include "globals.h"
-#include "filesocket.h"
 #include "filesystem.h"
 
-bool isServerFile(const char *path) {
-	uint32_t pathLength = strlen(path);
-	uint16_t reply = 0;
-
-	send(fd, "\x0C", 1, 0);
-	send(fd, &pathLength, 4, 0);
-	send(fd, path, pathLength, 0);
-	recv(fd, &reply, 2, 0);
-
-	return reply == 0xCAFE;
-}
+FSFileHandle file;
 
 bool getStat(FSClient *client, FSCmdBlock *block,
              const char *path, FSStat *returnedStat,
              int errHandling) {
 
+    std::string sdPath(path);
+    char TitleIDString[FS_MAX_FULLPATH_SIZE];
+    snprintf(TitleIDString,FS_MAX_FULLPATH_SIZE,"%016llX",OSGetTitleID());
+
+    std::string titleID(TitleIDString);
+
+    if (sdPath.substr(0, 5) != "/vol/") {
+        sdPath = "/vol/content/" + sdPath;
+    }
+
+    if (sdPath.substr(0, 13) == "/vol/content/") {
+        sdPath = "/vol/" + titleID + sdPath.substr(4);
+    }
+
+    std::string fpath = "sd:/cafeloader";
+    fpath += sdPath;
+
 	returnedStat->flags = (FSStatFlags)0;
-	return !isServerFile(path);
+	return !exists(fpath.c_str());
 }
 
 void checkFileHandle() {
-	if (file != 0) {
-		send(fd, "\xFF", 1, 0);
+	if (file != 0)
 		OSFatal("Blarg");
-	}
 }
 
 bool getStatFile(FSClient *client, FSCmdBlock *block,
@@ -40,10 +50,11 @@ bool getStatFile(FSClient *client, FSCmdBlock *block,
 				 int errHandling) {
 
 	if (file == fileHandle) {
-		send(fd, "\x08", 1, 0);
-		send(fd, &fileHandle, 4, 0);
+		struct stat path_stat;
+        if (fstat(fileHandle, &path_stat) < 0)
+            return 1;
 
-		recv(fd, &returnedStat->size, 4, 0);
+        returnedStat->size = path_stat.st_size;
 		return 0;
 	}
 
@@ -57,10 +68,13 @@ bool setPosFile(FSClient *client, FSCmdBlock *block,
 	if (fileHandle != file)
 		return 1;
 
-	send(fd, "\x09", 1, 0);
-	send(fd, &fileHandle, 4, 0);
-	send(fd, &fpos, 4, 0);
-	return 0;
+	int newOffset = lseek(fileHandle, (int)fpos, SEEK_SET);
+
+    if (newOffset == (int)fpos)
+        return 0;
+
+    else
+        return 1;
 }
 
 /* TODO: while the code is finished, I will re-enable this later one
@@ -70,23 +84,31 @@ bool openSave(FSClient *client, FSCmdBlock *block,
 			  FSFileHandle *fileHandle,
 			  int errHandling) {
 
-	checkFileHandle();
+	std::string sdPath(path);
+    char TitleIDString[FS_MAX_FULLPATH_SIZE];
+    snprintf(TitleIDString,FS_MAX_FULLPATH_SIZE,"%016llX",OSGetTitleID());
 
-	send(fd, "\x06", 1, 0);
+    std::string titleID(TitleIDString);
 
-	uint32_t length = strlen(path);
-	send(fd, &length, 4, 0);
-	send(fd, path, length, 0);
-	send(fd, mode, 1, 0);
+    if (sdPath.substr(0, 5) != "/vol/") {
+        sdPath = "/vol/content/" + sdPath;
+    }
 
-	uint32_t handle;
-	recv(fd, &handle, 4, 0);
+    if (sdPath.substr(0, 13) == "/vol/content/") {
+        sdPath = "/vol/" + titleID + sdPath.substr(4);
+    }
 
-	if (handle != 0) {
-		file = handle;
-		*fileHandle = handle;
-		return 0;
-	}
+    std::string fpath = "sd:/cafeloader";
+    fpath += sdPath;
+
+	if (!exists(fpath.c_str()))
+		return 1;
+
+    checkFileHandle();
+
+	FSFileHandle handle = open(fpath.c_str(), O_RDONLY);
+	file = handle;
+	*fileHandle = handle;
 
 	return 1;
 }
@@ -97,23 +119,65 @@ bool openFile(FSClient *client, FSCmdBlock *block,
               FSFileHandle *fileHandle,
               int errHandling) {
 
-	if (!isServerFile(path))
+    std::string sdPath(path);
+    char TitleIDString[FS_MAX_FULLPATH_SIZE];
+    snprintf(TitleIDString,FS_MAX_FULLPATH_SIZE,"%016llX",OSGetTitleID());
+
+    std::string titleID(TitleIDString);
+
+    if (sdPath.substr(0, 5) != "/vol/") {
+        sdPath = "/vol/content/" + sdPath;
+    }
+
+    if (sdPath.substr(0, 13) == "/vol/content/") {
+        sdPath = "/vol/" + titleID + sdPath.substr(4);
+    }
+
+    std::string fpath = "sd:/cafeloader";
+    fpath += sdPath;
+
+	if (!exists(fpath.c_str()))
 		return 1;
 
-	checkFileHandle();
+    checkFileHandle();
 
-	send(fd, "\x02", 1, 0);
-
-	uint32_t length = strlen(path);
-	send(fd, &length, 4, 0);
-	send(fd, path, length, 0);
-
-	uint32_t handle;
-	recv(fd, &handle, 4, 0);
-
+	FSFileHandle handle = open(fpath.c_str(), O_RDONLY);
 	file = handle;
 	*fileHandle = handle;
+
 	return 0;
+}
+
+#define MAXIMUM_READ_CHUNK 1024*1024
+
+int readIntoBuffer(FSFileHandle handle, char *buffer, int size, int count) {
+    int sizeToRead = size * count;
+    char *newBuffer = buffer;
+    int curResult = -1;
+    int totalSize = 0;
+    int toRead = 0;
+
+    while (sizeToRead > 0) {
+        if (sizeToRead < MAXIMUM_READ_CHUNK)
+            toRead = sizeToRead;
+
+        else
+            toRead = MAXIMUM_READ_CHUNK;
+
+        curResult = read(handle, newBuffer, toRead);
+        if (curResult < 0)
+            return -1;
+
+        if (curResult == 0)
+            //EOF
+            break;
+
+        newBuffer = (char*)(((uint32_t)newBuffer) + curResult);
+        totalSize += curResult;
+        sizeToRead -= curResult;
+    }
+
+    return totalSize;
 }
 
 int readFile(FSClient *client, FSCmdBlock *block,
@@ -124,18 +188,7 @@ int readFile(FSClient *client, FSCmdBlock *block,
 	if (fileHandle != file)
 		return -1;
 
-	send(fd, "\x03", 1, 0);
-	send(fd, &fileHandle, 4, 0);
-	send(fd, &size, 4, 0);
-	send(fd, &count, 4, 0);
-
-	uint32_t filesize;
-	uint32_t elementsRead;
-	recv(fd, &elementsRead, 4, 0);
-	recv(fd, &filesize, 4, 0);
-	receiveFile(dest, filesize);
-
-	return elementsRead;
+	return readIntoBuffer(fileHandle, dest, size, count);
 }
 
 bool writeFile(FSClient *client, FSCmdBlock *block,
@@ -147,11 +200,7 @@ bool writeFile(FSClient *client, FSCmdBlock *block,
 		return 1;
 
 	uint32_t length = size * count;
-	send(fd, "\x04", 1, 0);
-	send(fd, &fileHandle, 4, 0);
-	send(fd, &length, 4, 0);
-
-	sendFile(source, length);
+	write(fileHandle, source, length);
 
 	return 0;
 }
@@ -163,8 +212,7 @@ bool closeFile(FSClient *client, FSCmdBlock *block,
 	if (fileHandle != file)
 		return 1;
 
-	send(fd, "\x05", 1, 0);
-	send(fd, &fileHandle, 4, 0);
+    close(fileHandle);
 	file = 0;
 	return 0;
 }
