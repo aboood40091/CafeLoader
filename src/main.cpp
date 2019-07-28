@@ -23,6 +23,8 @@ WUPS_PLUGIN_LICENSE("GPL");
 WUPS_FS_ACCESS()
 WUPS_ALLOW_KERNEL()
 
+uint8_t gAppStatus = 0;
+
 int exists(const char *fname) {
     overrideLoading = true;
     int f = open(fname, O_RDONLY);
@@ -160,4 +162,8 @@ ON_APPLICATION_START(args){
             DEBUG_FUNCTION_LINE("log_printf_ addres: 0x%08X\n", debugPtr);
         }
     }
+}
+
+ON_APP_STATUS_CHANGED(status) {
+	gAppStatus = status;
 }

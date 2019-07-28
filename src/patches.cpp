@@ -19,6 +19,10 @@ DECL_FUNCTION(bool, FSOpenFile, FSClient *client, FSCmdBlock *block,
               FSFileHandle *fileHandle,
               int errHandling) {
 
+    if (gAppStatus == WUPS_APP_STATUS_BACKGROUND) {
+        return real_FSOpenFile(client, block, path, mode, fileHandle, errHandling);
+    }
+
     if (openFileCalledByCafeLoader == true) {
         if (overrideLoading == false) openFileCalledByCafeLoader = false;
         return real_FSOpenFile(client, block, path, mode, fileHandle, errHandling);
@@ -38,6 +42,10 @@ DECL_FUNCTION(bool, FSOpenFile, FSClient *client, FSCmdBlock *block,
 DECL_FUNCTION(bool, FSCloseFile, FSClient *client, FSCmdBlock *block,
 			   FSFileHandle fileHandle,
 			   int errHandling) {
+
+    if (gAppStatus == WUPS_APP_STATUS_BACKGROUND) {
+        return real_FSCloseFile(client, block, fileHandle, errHandling);
+    }
 
     if (closeFileCalledByCafeLoader == true) {
         if (overrideLoading == false) closeFileCalledByCafeLoader = false;
@@ -60,6 +68,10 @@ DECL_FUNCTION(int, FSReadFile, FSClient *client, FSCmdBlock *block,
              FSFileHandle fileHandle, int flag,
              int errHandling) {
 
+    if (gAppStatus == WUPS_APP_STATUS_BACKGROUND) {
+        return real_FSReadFile(client, block, dest, size, count, fileHandle, flag, errHandling);
+    }
+
     if (readFileCalledByCafeLoader == true) {
         if (overrideLoading == false) readFileCalledByCafeLoader = false;
         return real_FSReadFile(client, block, dest, size, count, fileHandle, flag, errHandling);
@@ -81,6 +93,10 @@ DECL_FUNCTION(bool, FSWriteFile, FSClient *client, FSCmdBlock *block,
 			   FSFileHandle fileHandle, int flag,
 			   int errHandling) {
 
+    if (gAppStatus == WUPS_APP_STATUS_BACKGROUND) {
+        return real_FSWriteFile(client, block, source, size, count, fileHandle, flag, errHandling);
+    }
+
     if (writeFileCalledByCafeLoader == true) {
         if (overrideLoading == false) writeFileCalledByCafeLoader = false;
         return real_FSWriteFile(client, block, source, size, count, fileHandle, flag, errHandling);
@@ -100,6 +116,10 @@ DECL_FUNCTION(bool, FSWriteFile, FSClient *client, FSCmdBlock *block,
 DECL_FUNCTION(bool, FSSetPosFile, FSClient *client, FSCmdBlock *block,
 				FSFileHandle fileHandle, uint32_t fpos,
 				int errHandling) {
+
+    if (gAppStatus == WUPS_APP_STATUS_BACKGROUND) {
+        return real_FSSetPosFile(client, block, fileHandle, fpos, errHandling);
+    }
 
     if (setPosFileCalledByCafeLoader == true) {
         if (overrideLoading == false) setPosFileCalledByCafeLoader = false;
@@ -121,6 +141,10 @@ DECL_FUNCTION(bool, FSGetStatFile, FSClient *client, FSCmdBlock *block,
 				 FSFileHandle fileHandle, FSStat *returnedStat,
 				 int errHandling) {
 
+    if (gAppStatus == WUPS_APP_STATUS_BACKGROUND) {
+        return real_FSGetStatFile(client, block, fileHandle, returnedStat, errHandling);
+    }
+
     if (getStatFileCalledByCafeLoader == true) {
         if (overrideLoading == false) getStatFileCalledByCafeLoader = false;
         return real_FSGetStatFile(client, block, fileHandle, returnedStat, errHandling);
@@ -140,6 +164,10 @@ DECL_FUNCTION(bool, FSGetStatFile, FSClient *client, FSCmdBlock *block,
 DECL_FUNCTION(bool, FSGetStat, FSClient *client, FSCmdBlock *block,
              const char *path, FSStat *returnedStat,
              int errHandling) {
+
+    if (gAppStatus == WUPS_APP_STATUS_BACKGROUND) {
+        return real_FSGetStat(client, block, path, returnedStat, errHandling);
+    }
 
     if (getStatCalledByCafeLoader == true) {
         if (overrideLoading == false) getStatCalledByCafeLoader = false;

@@ -11,6 +11,8 @@
 extern "C" {
 #endif // __cplusplus
 
+extern uint8_t gAppStatus;
+
 extern bool openFileCalledByCafeLoader;
 extern bool closeFileCalledByCafeLoader;
 extern bool readFileCalledByCafeLoader;
