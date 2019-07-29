@@ -38,34 +38,34 @@ bool getStat(FSClient *client, FSCmdBlock *block,
     std::string fpath = "sd:/cafeloader";
     fpath += sdPath;
 
-	returnedStat->flags = (FSStatFlags)0;
-	return !exists(fpath.c_str());
+    returnedStat->flags = (FSStatFlags)0;
+    return !exists(fpath.c_str());
 }
 
 bool getStatFile(FSClient *client, FSCmdBlock *block,
-				 FSFileHandle fileHandle, FSStat *returnedStat,
-				 int errHandling) {
+                 FSFileHandle fileHandle, FSStat *returnedStat,
+                 int errHandling) {
 
-	if (std::find(fileHandles.begin(), fileHandles.end(), fileHandle) != fileHandles.end()) {
-		struct stat path_stat;
+    if (std::find(fileHandles.begin(), fileHandles.end(), fileHandle) != fileHandles.end()) {
+        struct stat path_stat;
         if (fstat(fileHandle, &path_stat) < 0)
             return 1;
 
         returnedStat->size = path_stat.st_size;
-		return 0;
-	}
+        return 0;
+    }
 
-	return 1;
+    return 1;
 }
 
 bool setPosFile(FSClient *client, FSCmdBlock *block,
-				FSFileHandle fileHandle, uint32_t fpos,
-				int errHandling) {
+                FSFileHandle fileHandle, uint32_t fpos,
+                int errHandling) {
 
-	if (std::find(fileHandles.begin(), fileHandles.end(), fileHandle) == fileHandles.end())
-		return 1;
+    if (std::find(fileHandles.begin(), fileHandles.end(), fileHandle) == fileHandles.end())
+        return 1;
 
-	int newOffset = lseek(fileHandle, (int)fpos, SEEK_SET);
+    int newOffset = lseek(fileHandle, (int)fpos, SEEK_SET);
 
     if (newOffset == (int)fpos)
         return 0;
@@ -75,15 +75,15 @@ bool setPosFile(FSClient *client, FSCmdBlock *block,
 }
 
 bool openSave(FSClient *client, FSCmdBlock *block,
-			  uint8_t accountSlotNo, const char *path,
-			  const char *mode,
-			  FSFileHandle *fileHandle,
-			  int errHandling) {
+              uint8_t accountSlotNo, const char *path,
+              const char *mode,
+              FSFileHandle *fileHandle,
+              int errHandling) {
 
     return 1;
 
     /*
-	std::string sdPath(path);
+    std::string sdPath(path);
     char TitleIDString[FS_MAX_FULLPATH_SIZE];
     snprintf(TitleIDString,FS_MAX_FULLPATH_SIZE,"%016llX",OSGetTitleID());
 
@@ -100,15 +100,15 @@ bool openSave(FSClient *client, FSCmdBlock *block,
     std::string fpath = "sd:/cafeloader";
     fpath += sdPath;
 
-	if (!exists(fpath.c_str()))
-		return 1;
+    if (!exists(fpath.c_str()))
+        return 1;
 
-	FSFileHandle handle = open(fpath.c_str(), O_RDONLY);
-	fileHandles.push_back(handle);
-	*fileHandle = handle;
+    FSFileHandle handle = open(fpath.c_str(), O_RDONLY);
+    fileHandles.push_back(handle);
+    *fileHandle = handle;
 
-	return 0;
-	*/
+    return 0;
+    */
 }
 
 bool openFile(FSClient *client, FSCmdBlock *block,
@@ -134,8 +134,8 @@ bool openFile(FSClient *client, FSCmdBlock *block,
     fpath += sdPath;
 
     if (strcmp(mode, "r") == 0 || strcmp(mode, "r+") == 0) {
-    	if (!exists(fpath.c_str()))
-	    	return 1;
+        if (!exists(fpath.c_str()))
+            return 1;
     }
 
     uint32_t flags;
@@ -161,11 +161,11 @@ bool openFile(FSClient *client, FSCmdBlock *block,
         return 1;
     }
 
-	FSFileHandle handle = open(fpath.c_str(), flags);
-	fileHandles.push_back(handle);
-	*fileHandle = handle;
+    FSFileHandle handle = open(fpath.c_str(), flags);
+    fileHandles.push_back(handle);
+    *fileHandle = handle;
 
-	return 0;
+    return 0;
 }
 
 #define MAXIMUM_READ_CHUNK 1024*1024
@@ -205,34 +205,34 @@ int readFile(FSClient *client, FSCmdBlock *block,
              FSFileHandle fileHandle, int flag,
              int errHandling) {
 
-	if (std::find(fileHandles.begin(), fileHandles.end(), fileHandle) == fileHandles.end())
-		return -1;
+    if (std::find(fileHandles.begin(), fileHandles.end(), fileHandle) == fileHandles.end())
+        return -1;
 
-	return readIntoBuffer(fileHandle, dest, size, count);
+    return readIntoBuffer(fileHandle, dest, size, count);
 }
 
 bool writeFile(FSClient *client, FSCmdBlock *block,
-			   char *source, int size, int count,
-			   FSFileHandle fileHandle, int flag,
-			   int errHandling) {
+               char *source, int size, int count,
+               FSFileHandle fileHandle, int flag,
+               int errHandling) {
 
-	if (std::find(fileHandles.begin(), fileHandles.end(), fileHandle) == fileHandles.end())
-		return 1;
+    if (std::find(fileHandles.begin(), fileHandles.end(), fileHandle) == fileHandles.end())
+        return 1;
 
-	uint32_t length = size * count;
-	write(fileHandle, source, length);
+    uint32_t length = size * count;
+    write(fileHandle, source, length);
 
-	return 0;
+    return 0;
 }
 
 bool closeFile(FSClient *client, FSCmdBlock *block,
-			   FSFileHandle fileHandle,
-			   int errHandling) {
+               FSFileHandle fileHandle,
+               int errHandling) {
 
-	if (std::find(fileHandles.begin(), fileHandles.end(), fileHandle) == fileHandles.end())
-		return 1;
+    if (std::find(fileHandles.begin(), fileHandles.end(), fileHandle) == fileHandles.end())
+        return 1;
 
     close(fileHandle);
-	fileHandles.erase(std::remove(fileHandles.begin(), fileHandles.end(), fileHandle), fileHandles.end());
-	return 0;
+    fileHandles.erase(std::remove(fileHandles.begin(), fileHandles.end(), fileHandle), fileHandles.end());
+    return 0;
 }

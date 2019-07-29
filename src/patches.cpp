@@ -187,10 +187,10 @@ DECL_FUNCTION(bool, FSGetStat, FSClient *client, FSCmdBlock *block,
 }
 
 DECL_FUNCTION(bool, SAVEOpenFile, FSClient *client, FSCmdBlock *block,
-			  uint8_t accountSlotNo, const char *path,
-			  const char *mode,
-			  FSFileHandle *fileHandle,
-			  int errHandling) {
+              uint8_t accountSlotNo, const char *path,
+              const char *mode,
+              FSFileHandle *fileHandle,
+              int errHandling) {
 
     if (gAppStatus == WUPS_APP_STATUS_BACKGROUND) {
         return real_SAVEOpenFile(client, block, accountSlotNo, path, mode, fileHandle, errHandling);

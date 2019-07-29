@@ -166,7 +166,7 @@ ON_APPLICATION_START(args){
 }
 
 ON_APP_STATUS_CHANGED(status) {
-	gAppStatus = status;
+    gAppStatus = status;
 }
 
 ON_APPLICATION_ENDING() {
