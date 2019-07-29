@@ -11,7 +11,6 @@
 
 #include <coreinit/debug.h>
 #include <coreinit/title.h>
-#include <utils/logger.h>
 
 #include "globals.h"
 #include "filesystem.h"
@@ -75,13 +74,15 @@ bool setPosFile(FSClient *client, FSCmdBlock *block,
         return 1;
 }
 
-/* TODO: while the code is finished, I will re-enable this later one
 bool openSave(FSClient *client, FSCmdBlock *block,
 			  uint8_t accountSlotNo, const char *path,
 			  const char *mode,
 			  FSFileHandle *fileHandle,
 			  int errHandling) {
 
+    return 1;
+
+    /*
 	std::string sdPath(path);
     char TitleIDString[FS_MAX_FULLPATH_SIZE];
     snprintf(TitleIDString,FS_MAX_FULLPATH_SIZE,"%016llX",OSGetTitleID());
@@ -106,9 +107,9 @@ bool openSave(FSClient *client, FSCmdBlock *block,
 	fileHandles.push_back(handle);
 	*fileHandle = handle;
 
-	return 1;
+	return 0;
+	*/
 }
-*/
 
 bool openFile(FSClient *client, FSCmdBlock *block,
               const char *path, const char *mode,
@@ -132,10 +133,35 @@ bool openFile(FSClient *client, FSCmdBlock *block,
     std::string fpath = "sd:/cafeloader";
     fpath += sdPath;
 
-	if (!exists(fpath.c_str()))
-		return 1;
+    if (strcmp(mode, "r") == 0 || strcmp(mode, "r+") == 0) {
+    	if (!exists(fpath.c_str()))
+	    	return 1;
+    }
 
-	FSFileHandle handle = open(fpath.c_str(), O_RDONLY);
+    uint32_t flags;
+    if (strcmp(mode, "r") == 0) {
+        flags = O_RDONLY;
+    }
+    else if (strcmp(mode, "r+") == 0) {
+        flags = O_RDWR;
+    }
+    else if (strcmp(mode, "w") == 0) {
+        flags = O_TRUNC | O_CREAT | O_WRONLY;
+    }
+    else if (strcmp(mode, "w+") == 0) {
+        flags = O_TRUNC | O_CREAT | O_RDWR;
+    }
+    else if (strcmp(mode, "a") == 0) {
+        flags = O_CREAT | O_APPEND | O_WRONLY;
+    }
+    else if (strcmp(mode, "a+") == 0) {
+        flags = O_CREAT | O_APPEND | O_RDWR;
+    }
+    else {
+        return 1;
+    }
+
+	FSFileHandle handle = open(fpath.c_str(), flags);
 	fileHandles.push_back(handle);
 	*fileHandle = handle;
 

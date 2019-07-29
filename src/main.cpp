@@ -11,6 +11,7 @@
 #include <utils/logger.h>
 #include <wups.h>
 
+#include "filesystem.h"
 #include "globals.h"
 #include "handler.h"
 
@@ -166,4 +167,11 @@ ON_APPLICATION_START(args){
 
 ON_APP_STATUS_CHANGED(status) {
 	gAppStatus = status;
+}
+
+ON_APPLICATION_ENDING() {
+    for(auto handle : fileHandles) {
+        close(handle);
+    }
+    fileHandles.clear();
 }

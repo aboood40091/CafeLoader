@@ -20,6 +20,7 @@ extern bool writeFileCalledByCafeLoader;
 extern bool setPosFileCalledByCafeLoader;
 extern bool getStatFileCalledByCafeLoader;
 extern bool getStatCalledByCafeLoader;
+extern bool openSaveCalledByCafeLoader;
 extern bool overrideLoading;
 
 int exists(const char *fname);

@@ -1,11 +1,15 @@
 #pragma once
 
+#include <vector>
+
 #include <coreinit/filesystem.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
+
+extern std::vector<FSFileHandle> fileHandles;
 
 bool openFile(FSClient *client, FSCmdBlock *block,
               const char *path, const char *mode,
@@ -37,6 +41,12 @@ bool getStatFile(FSClient *client, FSCmdBlock *block,
 bool getStat(FSClient *client, FSCmdBlock *block,
              const char *path, FSStat *returnedStat,
              int errHandling);
+
+bool openSave(FSClient *client, FSCmdBlock *block,
+			  uint8_t accountSlotNo, const char *path,
+			  const char *mode,
+			  FSFileHandle *fileHandle,
+			  int errHandling);
 
 #ifdef __cplusplus
 }
