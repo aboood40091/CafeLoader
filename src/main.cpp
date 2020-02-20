@@ -98,14 +98,13 @@ ON_APPLICATION_START(args){
         std::string patchesPath = patchTitleIDPath + "/Patches.hax";
         std::string codePath    = patchTitleIDPath + "/Code.bin";
         std::string dataPath    = patchTitleIDPath + "/Data.bin";
-        std::string ctorsPath   = patchTitleIDPath + "/Ctors.bin";
 
         uint32_t CODE_ADDR;
         uint32_t DATA_ADDR;
 
         uint32_t length = 0;
 
-        if (exists(addrPath.c_str()) && exists(patchesPath.c_str()) && exists(codePath.c_str()) && exists(dataPath.c_str()) && exists(ctorsPath.c_str())) {
+        if (exists(addrPath.c_str()) && exists(patchesPath.c_str()) && exists(codePath.c_str()) && exists(dataPath.c_str())) {
             DEBUG_FUNCTION_LINE("Patches found!\n");
 
             int   addrFile   = open(addrPath.c_str(), O_RDONLY);
@@ -147,20 +146,10 @@ ON_APPLICATION_START(args){
 
             DEBUG_FUNCTION_LINE("Loaded Data.bin!\n");
 
-            int   ctorsFile   = open(ctorsPath.c_str(), O_RDONLY);
-            char *ctorsBuffer = readBuf(ctorsPath.c_str(), ctorsFile);
-            length = getFileLength(ctorsPath.c_str());
-            KernelCopyData((void *)(DATA_ADDR + 0x20004), ctorsBuffer, length);
-
-            close(ctorsFile);
-            free(ctorsBuffer);
-
-            DEBUG_FUNCTION_LINE("Loaded Ctors.bin!\n");
-
             uint32_t debugPtr = (uint32_t)&log_printf_;
-            KernelCopyData((void *)(DATA_ADDR + 0x20000), &debugPtr, 4);
+            KernelCopyData((void *)(DATA_ADDR - 4), &debugPtr, sizeof(uint32_t));
 
-            DEBUG_FUNCTION_LINE("log_printf_ addres: 0x%08X\n", debugPtr);
+            DEBUG_FUNCTION_LINE("log_printf_ address: 0x%08X\n", debugPtr);
         }
     }
 }
