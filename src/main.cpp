@@ -100,8 +100,8 @@ ON_APPLICATION_START(args){
 
         DEBUG_FUNCTION_LINE("patchTitleIDPath: %s\n", patchTitleIDPath.c_str());
 
-        std::string addrPath    = patchTitleIDPath + "/Addr.bin";
         std::string patchesPath = patchTitleIDPath + "/Patches.hax";
+        std::string addrPath    = patchTitleIDPath + "/Addr.bin";
         std::string codePath    = patchTitleIDPath + "/Code.bin";
         std::string dataPath    = patchTitleIDPath + "/Data.bin";
         std::string ipPath      = "sd:/cafeloader/ip.bin";
@@ -138,8 +138,21 @@ ON_APPLICATION_START(args){
             }
         }
 
-        if (exists(addrPath.c_str()) && exists(patchesPath.c_str()) && exists(codePath.c_str()) && exists(dataPath.c_str())) {
-            DEBUG_FUNCTION_LINE("Patches found!\n");
+        if (exists(patchesPath.c_str())) {
+            DEBUG_FUNCTION_LINE("Patches.hax found!\n");
+
+            int   patchesFile   = open(patchesPath.c_str(), O_RDONLY);
+            char *patchesBuffer = readBuf(patchesPath.c_str(), patchesFile);
+            Patch(patchesBuffer);
+
+            close(patchesFile);
+            free(patchesBuffer);
+
+            DEBUG_FUNCTION_LINE("Loaded Patches.hax!\n");
+        }
+
+        if (exists(addrPath.c_str()) && exists(codePath.c_str()) && exists(dataPath.c_str())) {
+            DEBUG_FUNCTION_LINE("Code patches found!\n");
 
             int   addrFile   = open(addrPath.c_str(), O_RDONLY);
             char *addrBuffer = readBuf(addrPath.c_str(), addrFile);
@@ -150,15 +163,6 @@ ON_APPLICATION_START(args){
             free(addrBuffer);
 
             DEBUG_FUNCTION_LINE("Loaded Addr.bin!\n");
-
-            int   patchesFile   = open(patchesPath.c_str(), O_RDONLY);
-            char *patchesBuffer = readBuf(patchesPath.c_str(), patchesFile);
-            Patch(patchesBuffer);
-
-            close(patchesFile);
-            free(patchesBuffer);
-
-            DEBUG_FUNCTION_LINE("Loaded Patches.hax!\n");
 
             int   codeFile   = open(codePath.c_str(), O_RDONLY);
             char *codeBuffer = readBuf(codePath.c_str(), codeFile);
