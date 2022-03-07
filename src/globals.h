@@ -1,11 +1,12 @@
 #pragma once
 
-#include <stdbool.h>
 #include <coreinit/filesystem.h>
+#include <stdbool.h>
+#include <vector>
 
-#define FS_MAX_LOCALPATH_SIZE           511
-#define FS_MAX_MOUNTPATH_SIZE           128
-#define FS_MAX_FULLPATH_SIZE            (FS_MAX_LOCALPATH_SIZE + FS_MAX_MOUNTPATH_SIZE)
+#define FS_MAX_LOCALPATH_SIZE 511
+#define FS_MAX_MOUNTPATH_SIZE 128
+#define FS_MAX_FULLPATH_SIZE (FS_MAX_LOCALPATH_SIZE + FS_MAX_MOUNTPATH_SIZE)
 
 #ifdef __cplusplus
 extern "C" {
@@ -13,19 +14,10 @@ extern "C" {
 
 extern uint8_t gAppStatus;
 
-extern bool openFileCalledByCafeLoader;
-extern bool closeFileCalledByCafeLoader;
-extern bool readFileCalledByCafeLoader;
-extern bool writeFileCalledByCafeLoader;
-extern bool setPosFileCalledByCafeLoader;
-extern bool getStatFileCalledByCafeLoader;
-extern bool getStatCalledByCafeLoader;
-extern bool openSaveCalledByCafeLoader;
-extern bool overrideLoading;
-
-int exists(const char *fname);
-uint32_t getFileLength(const char *fname);
-char* readBuf(const char *fname, int f);
+int exists(const char* fname);
+int existsDir(const char* dname);
+uint32_t getFileLength(const char* fname);
+char* readBuf(const char* fname, int f);
 
 #ifdef __cplusplus
 }
