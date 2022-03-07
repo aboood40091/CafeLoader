@@ -15,8 +15,8 @@ char mountPath[128];
 
 void mountSDCard(FSClient* client, FSCmdBlock* block) {
     if (!alreadyMounted || (OSGetTitleID() != latestTID)) {
-        FSStatus ret1 = FSGetMountSource(client, block, FS_MOUNT_SOURCE_SD, &mountSource, -1);
-        FSStatus ret2 = FSMount(client, block, &mountSource, mountPath, 128, -1);
+        FSGetMountSource(client, block, FS_MOUNT_SOURCE_SD, &mountSource, -1);
+        FSMount(client, block, &mountSource, mountPath, 128, -1);
         alreadyMounted = true;
         latestTID = OSGetTitleID();
     }
@@ -59,7 +59,7 @@ DECL_FUNCTION(FSStatus, FSOpenFile, FSClient* client, FSCmdBlock* block, const c
     std::string sdPath = std::string(mountPath) + "/cafeloader/vol/" + std::string(titleId) + realpath.substr(4);
 
     int fd = -1;
-    FSStatus ret = real_FSOpenFile(client, block, sdPath.c_str(), mode, (FSFileHandle*)&fd, -1);
+    real_FSOpenFile(client, block, sdPath.c_str(), mode, (FSFileHandle*)&fd, -1);
     if (fd < 0) {
         return real_FSOpenFile(client, block, path, mode, fileHandle, errHandling);
     }
